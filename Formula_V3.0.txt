@@ -1,0 +1,29 @@
+=LET(
+    /* ===================== [唯一配置区] ===================== */
+    Row_Var, 45:100,         /* 全局行号变量 */
+    Anchor_Col, "T",         /* 匹配锚点列 (仓库编号所在列) */
+    /* ========================================================= */
+
+    /* 1. 动态构建引用 (使用交叉引用语法 列:列 行:行) */
+    src_Q_T, Q:T Row_Var,    /* 提取 Q 到 T 列 */
+    src_AB, AB:AB Row_Var,   /* 提取物理 AB 列 */
+    target, T:T Row_Var,     /* 锚点列用于匹配 */
+
+    /* 2. 执行内存匹配逻辑 */
+    v_match, IFERROR(XLOOKUP(target, 'd:\desk\[仓库编号匹配会计主体0927.xls]仓库匹配公司'!$C:$C, 'd:\desk\[仓库编号匹配会计主体0927.xls]仓库匹配公司'!$E:$E), ""),
+
+    /* 3. 构造判定掩码 (匹配为空 且 仓库列不为空) */
+    error_mask, (v_match="") * (target<>""),
+    error_count, SUM(N(error_mask)),
+
+    /* 4. 构造输出矩阵：[ Q | R | S | T | AB ] */
+    full_matrix, HSTACK(src_Q_T, src_AB),
+
+    /* 5. 执行筛选输出 (静默模式，无标题) */
+    result, IF(error_count > 0, 
+        FILTER(full_matrix, error_mask), 
+        ""
+    ),
+
+    result
+)
